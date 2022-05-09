@@ -1,28 +1,18 @@
-FROM ubuntu:20.04
 
-ENV DEBIAN_FRONTEND="noninteractive"
+FROM ubuntu:22.04
 
-RUN apt-get -y update && apt-get -y upgrade && \
-        apt-get install -y software-properties-common && \
-        add-apt-repository -y ppa:qbittorrent-team/qbittorrent-stable && \
-        apt-get install -y python3 python3-pip python3-lxml aria2 \
-        qbittorrent-nox tzdata p7zip-full p7zip-rar xz-utils curl pv jq \
-        ffmpeg locales wget unzip neofetch git make g++ gcc automake \
-        autoconf libtool libcurl4-openssl-dev qt5-default \
-        libsodium-dev libssl-dev libcrypto++-dev libc-ares-dev \
-        libsqlite3-dev libfreeimage-dev swig libboost-all-dev \
-        libpthread-stubs0-dev zlib1g-dev
+RUN apt-get -y update && DEBIAN_FRONTEND="noninteractive" \
+    apt-get install -y python3 python3-pip aria2 qbittorrent-nox \
+    tzdata p7zip-full p7zip-rar xz-utils curl pv jq ffmpeg \
+    locales git unzip rtmpdump libmagic-dev libcurl4-openssl-dev \
+    libssl-dev libc-ares-dev libsodium-dev libcrypto++-dev \
+    libsqlite3-dev libfreeimage-dev libpq-dev libffi-dev \
+    && locale-gen en_US.UTF-8 && \
+    curl -L https://github.com/anasty17/megasdkrest/releases/download/latest/megasdkrest-$(cpu=$(uname -m);\
+    if [[ "$cpu" == "x86_64" ]]; then echo "amd64"; elif [[ "$cpu" == "x86" ]]; \
+    then echo "i386"; elif [[ "$cpu" == "aarch64" ]]; then echo "arm64"; else echo $cpu; fi) \
+    -o /usr/local/bin/megasdkrest && chmod +x /usr/local/bin/megasdkrest
         
-# Installing Mega SDK Python Binding
-ENV MEGA_SDK_VERSION="3.9.2"
-RUN git clone https://github.com/meganz/sdk.git --depth=1 -b v$MEGA_SDK_VERSION ~/home/sdk \
-    && cd ~/home/sdk && rm -rf .git \
-    && autoupdate -fIv && ./autogen.sh \
-    && ./configure --disable-silent-rules --enable-python --with-sodium --disable-examples \
-    && make -j$(nproc --all) \
-    && cd bindings/python/ && python3 setup.py bdist_wheel \
-    && cd dist/ && pip3 install --no-cache-dir megasdk-$MEGA_SDK_VERSION-*.whl 
-
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y autoremove && apt-get -y autoclean
         
 RUN locale-gen en_US.UTF-8
